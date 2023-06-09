@@ -29,34 +29,32 @@ async function run() {
     // Connect the client to the server	(optional starting in v4.7)
     await client.connect();
 
+    const classesCollection = client.db('LangLinkDB').collection('classes')
+    const instructorsCollection = client.db('LangLinkDB').collection('instructors')
     const usersCollection = client.db("LangLinkDB").collection("users");
 
-    // users api
-    app.get('/users', async (req, res) => {
-      const result = await usersCollection.find().toArray();
-      res.send(result);
-    });
-
-    app.post('/users', async (req, res) => {
-      const user = req.body;
-      console.log(user)
-      const query = { email: user.email }
-      const isExistingUser = await usersCollection.findOne(query)
-      console.log(isExistingUser)
-      if (isExistingUser) {
-        return res.send({ message: "User already exist" })
-      }
-      const result = await usersCollection.insertOne(user);
-      res.send(result);
-      console.log(result)
+    // classes api
+    app.get('/classes', async (req, res) => {
+      const classes = await classesCollection.find({}).toArray();
+      res.send(classes)
     })
+
+
+    // instructors api
+    app.get('/instructors', async (req, res) => {
+      const classes = await instructorsCollection.find({}).toArray();
+      res.send(classes)
+    })
+
+
+    // users api
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {
     // Ensures that the client will close when you finish/error
-    await client.close();
+    // await client.close();
   }
 }
 run().catch(console.dir);
