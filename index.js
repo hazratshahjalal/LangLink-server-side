@@ -28,6 +28,29 @@ async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
     await client.connect();
+
+    const usersCollection = client.db("LangLinkDB").collection("users");
+
+    // users api
+    app.get('/users', async (req, res) => {
+      const result = await usersCollection.find().toArray();
+      res.send(result);
+    });
+
+    app.post('/users', async (req, res) => {
+      const user = req.body;
+      console.log(user)
+      const query = { email: user.email }
+      const isExistingUser = await usersCollection.findOne(query)
+      console.log(isExistingUser)
+      if (isExistingUser) {
+        return res.send({ message: "User already exist" })
+      }
+      const result = await usersCollection.insertOne(user);
+      res.send(result);
+      console.log(result)
+    })
+
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
