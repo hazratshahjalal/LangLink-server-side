@@ -32,7 +32,7 @@ const verifyJWT = (req, res, next) => {
 
 
 
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.r7lfnhm.mongodb.net/?retryWrites=true&w=majority`;
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
@@ -73,8 +73,38 @@ async function run() {
     // classes api
     app.get('/classes', async (req, res) => {
       const classes = await classesCollection.find({}).toArray();
-      res.send(classes)
-    })
+
+      classes[0].status = 'pending';
+      classes[1].status = 'denied';
+
+      res.send(classes);
+    });
+
+    app.patch('/classes/approve/:id', verifyAdmin, async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const updateDoc = {
+        $set: {
+          status: 'approved',
+        },
+      };
+
+      const result = await classesCollection.updateOne(filter, updateDoc);
+      res.send({ success: result.modifiedCount > 0 });
+    });
+
+    app.patch('/classes/deny/:id', verifyAdmin, async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const updateDoc = {
+        $set: {
+          status: 'denied',
+        },
+      };
+
+      const result = await classesCollection.updateOne(filter, updateDoc);
+      res.send({ success: result.modifiedCount > 0 });
+    });
 
 
     // instructors api
@@ -85,7 +115,7 @@ async function run() {
 
 
     // users api
-    app.get('/users', verifyJWT, verifyAdmin, async (req, res) => {
+    app.get('/users', async (req, res) => {
       const result = await usersCollection.find().toArray();
       res.send(result);
     });
@@ -102,6 +132,8 @@ async function run() {
       res.send(result);
     });
 
+
+
     app.patch('/users/admin/:id', async (req, res) => {
       const id = req.params.id;
       console.log(id);
@@ -109,6 +141,20 @@ async function run() {
       const updateDoc = {
         $set: {
           role: 'admin'
+        },
+      };
+
+      const result = await usersCollection.updateOne(filter, updateDoc);
+      res.send(result);
+
+    })
+    app.patch('/users/instructor/:id', async (req, res) => {
+      const id = req.params.id;
+      console.log(id);
+      const filter = { _id: new ObjectId(id) };
+      const updateDoc = {
+        $set: {
+          role: 'instructor'
         },
       };
 
